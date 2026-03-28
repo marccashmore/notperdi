@@ -1,0 +1,3 @@
+azure-functions
+sqlalchemy==2.*
+pyodbc

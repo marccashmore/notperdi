@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "WebSearch",
+      "WebFetch(domain:techcommunity.microsoft.com)",
+      "Bash(npm list:*)",
+      "Bash(winget list:*)",
+      "Bash(where func:*)",
+      "Bash(npm root:*)",
+      "Bash(python -c \"import azure.functions; import sqlalchemy; import pyodbc; print\\(''all deps ok''\\)\")"
+    ]
+  }
+}
