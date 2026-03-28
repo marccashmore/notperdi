@@ -33,8 +33,9 @@ export default function App() {
 
   const targetDate = getWednesday(weekOffset)
   const { event, loading: eventLoading, error, setRsvp, toggleCancelled, saveTeams, saveLimit, saveRsvpSchedule, saveWinner } = useCurrentEvent(targetDate)
-  const { users, addUser, deleteUser, renameUser } = useUsers()
+  const { addUser, deleteUser, renameUser } = useUsers()
   const { records, refresh: refreshAttendance, updateRating } = useAttendance()
+  const users = records
   const { isAdmin, login, logout } = useAdmin()
 
   const starRatings: Record<number, number> = Object.fromEntries(records.map((r) => [r.id, r.rating ?? 3]))

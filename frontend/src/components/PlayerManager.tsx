@@ -121,6 +121,22 @@ export function PlayerManager({ records, onAdd, onDelete, onRename, onRate }: Pr
                           Cancel
                         </button>
                       </form>
+                    ) : editingRating === record.id ? (
+                      <>
+                        <p className="flex-1 font-semibold text-gray-900 truncate">{record.name}</p>
+                        <div className="flex gap-1 shrink-0">
+                          {[1,2,3,4,5].map((n) => (
+                            <button
+                              key={n}
+                              onClick={() => { onRate(record.id, n); setEditingRating(null) }}
+                              className={`w-9 h-9 rounded-lg text-sm font-bold transition-all active:scale-95 ${n === record.rating ? 'bg-amber-400 text-white' : 'bg-gray-100 text-gray-500 hover:bg-amber-100'}`}
+                            >
+                              {n}
+                            </button>
+                          ))}
+                          <button onClick={() => setEditingRating(null)} className="w-9 h-9 rounded-lg text-sm bg-gray-100 text-gray-400 hover:bg-gray-200">✕</button>
+                        </div>
+                      </>
                     ) : (
                       <>
                         <div className="flex-1 min-w-0">
@@ -145,29 +161,14 @@ export function PlayerManager({ records, onAdd, onDelete, onRename, onRate }: Pr
                           })()}
                         </div>
 
-                        {/* Star rating */}
-                        {editingRating === record.id ? (
-                          <div className="flex gap-1 shrink-0">
-                            {[1,2,3,4,5].map((n) => (
-                              <button
-                                key={n}
-                                onClick={() => { onRate(record.id, n); setEditingRating(null) }}
-                                className={`w-7 h-7 rounded-lg text-xs font-bold transition-all active:scale-95 ${n === record.rating ? 'bg-amber-400 text-white' : 'bg-gray-100 text-gray-500 hover:bg-amber-100'}`}
-                              >
-                                {n}
-                              </button>
-                            ))}
-                            <button onClick={() => setEditingRating(null)} className="w-7 h-7 rounded-lg text-xs bg-gray-100 text-gray-400 hover:bg-gray-200">✕</button>
-                          </div>
-                        ) : (
-                          <button
+                        {/* Star rating badge */}
+                        <button
                             onClick={() => { setEditingRating(record.id); setConfirmDelete(null); setEditing(null) }}
                             className="shrink-0 bg-amber-100 text-amber-700 font-bold text-xs px-2.5 py-1 rounded-full hover:bg-amber-200 active:scale-95 transition-all"
                             title="Set star rating"
                           >
                             ⭐ {record.rating ?? 3}
                           </button>
-                        )}
 
                         {/* Edit */}
                         <button
