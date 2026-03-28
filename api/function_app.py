@@ -11,11 +11,15 @@ import sqlalchemy as sa
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
+_engine: sa.Engine | None = None
 
 def get_engine() -> sa.Engine:
-    """Return a SQLAlchemy engine connected to Azure SQL."""
-    conn_str = os.environ["SQL_CONNECTION_STRING"]
-    return sa.create_engine(f"mssql+pyodbc:///?odbc_connect={conn_str}")
+    """Return a module-level SQLAlchemy engine (connection pool reused across warm invocations)."""
+    global _engine
+    if _engine is None:
+        conn_str = os.environ["SQL_CONNECTION_STRING"]
+        _engine = sa.create_engine(f"mssql+pyodbc:///?odbc_connect={conn_str}", pool_pre_ping=True)
+    return _engine
 
 
 def next_wednesday(from_date: date | None = None) -> date:
