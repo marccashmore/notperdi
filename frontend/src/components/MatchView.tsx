@@ -28,22 +28,43 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-function balancedSplit(players: User[], scores: Record<number, number>): TeamMap {
-  const sorted = [...players].sort((a, b) => (scores[b.id] ?? 0) - (scores[a.id] ?? 0))
-  const capA = Math.ceil(players.length / 2)
-  const capB = Math.floor(players.length / 2)
-  const newTeams: TeamMap = {}
-  let totalA = 0, totalB = 0, countA = 0, countB = 0
-  for (const u of sorted) {
-    const s = scores[u.id] ?? 0
-    let toA: boolean
-    if (countA >= capA) toA = false
-    else if (countB >= capB) toA = true
-    else toA = totalA <= totalB
-    if (toA) { newTeams[u.id] = 1; totalA += s; countA++ }
-    else      { newTeams[u.id] = 2; totalB += s; countB++ }
+function draftSplit(players: User[], starRatings: Record<number, number>, winRates: Record<number, number | null>): TeamMap {
+  const n = players.length
+  if (n === 0) return {}
+  const capSmall = Math.floor(n / 2)
+  const available = [...players].sort((a, b) => {
+    const rDiff = (starRatings[b.id] ?? 3) - (starRatings[a.id] ?? 3)
+    if (rDiff !== 0) return rDiff
+    return (winRates[b.id] ?? 0) - (winRates[a.id] ?? 0)
+  })
+  const teamA: User[] = [], teamB: User[] = []
+  const result: TeamMap = {}
+  const startA = Math.random() < 0.5
+  while (available.length > 0) {
+    const sumRatingA = teamA.reduce((s, u) => s + (starRatings[u.id] ?? 3), 0)
+    const sumRatingB = teamB.reduce((s, u) => s + (starRatings[u.id] ?? 3), 0)
+    const sumWinA = teamA.reduce((s, u) => s + (winRates[u.id] ?? 0), 0)
+    const sumWinB = teamB.reduce((s, u) => s + (winRates[u.id] ?? 0), 0)
+    let pickA: boolean
+    if (teamA.length === 0 && teamB.length === 0) {
+      pickA = startA
+    } else if (sumRatingA !== sumRatingB) {
+      pickA = sumRatingA < sumRatingB
+    } else if (sumWinA !== sumWinB) {
+      pickA = sumWinA < sumWinB
+    } else {
+      pickA = Math.random() < 0.5
+    }
+    const player = available.shift()!
+    if (pickA) { teamA.push(player); result[player.id] = 1 }
+    else        { teamB.push(player); result[player.id] = 2 }
+    if (teamA.length === capSmall || teamB.length === capSmall) {
+      const rest: 1 | 2 = teamA.length === capSmall ? 2 : 1
+      for (const p of available) result[p.id] = rest
+      break
+    }
   }
-  return newTeams
+  return result
 }
 
 interface Props {
@@ -52,11 +73,11 @@ interface Props {
   onRsvp: (userId: number, status: RsvpStatus) => void
   onSaveTeams: (assignments: { user_id: number; team: 1 | 2 }[]) => void
   isAdmin: boolean
-  scores: Record<number, number>
+  starRatings: Record<number, number>
   winRates: Record<number, number | null>
 }
 
-export function MatchView({ users, event, onRsvp, onSaveTeams, isAdmin, scores, winRates }: Props) {
+export function MatchView({ users, event, onRsvp, onSaveTeams, isAdmin, starRatings, winRates }: Props) {
   // RSVP modal state
   const [picking, setPicking] = useState<RsvpStatus | null>(null)
   const [search, setSearch] = useState('')
@@ -134,7 +155,7 @@ export function MatchView({ users, event, onRsvp, onSaveTeams, isAdmin, scores, 
     shuffled.forEach((u, i) => { t[u.id] = i < half ? 1 : 2 })
     setTeams(t); setSaved(false)
   }
-  const bestMatch = () => { setTeams(balancedSplit(playingUsers, scores)); setSaved(false) }
+  const bestMatch = () => { setTeams(draftSplit(playingUsers, starRatings, winRates)); setSaved(false) }
   const swapPlayer = (userId: number) => {
     setTeams((prev) => ({ ...prev, [userId]: prev[userId] === 1 ? 2 : 1 }))
     setSaved(false)

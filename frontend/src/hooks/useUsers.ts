@@ -6,6 +6,7 @@ export interface User {
 }
 
 export interface AttendanceRecord extends User {
+  rating: number
   attended: number
   out: number
   ill: number
@@ -81,5 +82,17 @@ export function useAttendance() {
 
   useEffect(() => { refresh() }, [refresh])
 
-  return { records, loading, refresh }
+  const updateRating = useCallback(
+    async (id: number, rating: number) => {
+      await fetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating }),
+      })
+      refresh()
+    },
+    [refresh]
+  )
+
+  return { records, loading, refresh, updateRating }
 }

@@ -78,12 +78,23 @@ def create_user(req: func.HttpRequest) -> func.HttpResponse:
 def update_user(req: func.HttpRequest) -> func.HttpResponse:
     user_id = int(req.route_params["user_id"])
     body = req.get_json()
-    name = (body.get("name") or "").strip()
-    if not name:
-        return _json({"error": "name is required"}, status=400)
+    fields = {}
+    if "name" in body:
+        name = (body.get("name") or "").strip()
+        if not name:
+            return _json({"error": "name is required"}, status=400)
+        fields["name"] = name
+    if "rating" in body:
+        val = body["rating"]
+        if isinstance(val, int) and 1 <= val <= 5:
+            fields["rating"] = val
+    if not fields:
+        return _json({"error": "no updatable fields"}, status=400)
+    set_clause = ", ".join(f"{k} = :{k}" for k in fields)
+    fields["user_id"] = user_id
     try:
         with get_engine().begin() as conn:
-            conn.execute(sa.text("UPDATE users SET name = :name WHERE id = :id"), {"name": name, "id": user_id})
+            conn.execute(sa.text(f"UPDATE users SET {set_clause} WHERE id = :user_id"), fields)
         return _json({"ok": True})
     except Exception:
         logging.exception("update_user failed")
@@ -114,6 +125,7 @@ def get_attendance(req: func.HttpRequest) -> func.HttpResponse:
                 SELECT
                     u.id,
                     u.name,
+                    u.rating,
                     SUM(CASE WHEN r.status = 'in'  THEN 1 ELSE 0 END) AS attended,
                     SUM(CASE WHEN r.status = 'out' THEN 1 ELSE 0 END) AS out_count,
                     SUM(CASE WHEN r.status = 'ill' THEN 1 ELSE 0 END) AS ill_count,
@@ -143,7 +155,7 @@ def get_attendance(req: func.HttpRequest) -> func.HttpResponse:
                 LEFT JOIN rsvps r ON r.user_id = u.id
                 LEFT JOIN team_assignments ta ON ta.user_id = u.id AND ta.event_id = r.event_id
                 LEFT JOIN events e ON e.id = r.event_id
-                GROUP BY u.id, u.name
+                GROUP BY u.id, u.name, u.rating
                 ORDER BY u.name
             """)).fetchall()
 
@@ -154,6 +166,7 @@ def get_attendance(req: func.HttpRequest) -> func.HttpResponse:
             result.append({
                 "id": r.id,
                 "name": r.name,
+                "rating": r.rating,
                 "attended": r.attended,
                 "out": r.out_count,
                 "ill": r.ill_count,

@@ -34,10 +34,10 @@ export default function App() {
   const targetDate = getWednesday(weekOffset)
   const { event, loading: eventLoading, error, setRsvp, toggleCancelled, saveTeams, saveLimit, saveRsvpSchedule, saveWinner } = useCurrentEvent(targetDate)
   const { users, addUser, deleteUser, renameUser } = useUsers()
-  const { records, refresh: refreshAttendance } = useAttendance()
+  const { records, refresh: refreshAttendance, updateRating } = useAttendance()
   const { isAdmin, login, logout } = useAdmin()
 
-  const scores: Record<number, number> = Object.fromEntries(records.map((r) => [r.id, r.win_rate ?? 0.5]))
+  const starRatings: Record<number, number> = Object.fromEntries(records.map((r) => [r.id, r.rating ?? 3]))
   const winRates: Record<number, number | null> = Object.fromEntries(records.map((r) => [r.id, r.win_rate]))
 
   const isPastOrToday = event ? new Date(event.match_date + 'T00:00:00') <= new Date(new Date().toDateString()) : false
@@ -149,7 +149,7 @@ export default function App() {
                         onRsvp={setRsvp}
                         onSaveTeams={saveTeams}
                         isAdmin={isAdmin}
-                        scores={scores}
+                        starRatings={starRatings}
                         winRates={winRates}
                       />
                       {isPastOrToday && (
@@ -176,6 +176,7 @@ export default function App() {
               onAdd={async (name) => { await addUser(name); refreshAttendance() }}
               onDelete={async (id) => { await deleteUser(id); refreshAttendance() }}
               onRename={async (id, name) => { await renameUser(id, name); refreshAttendance() }}
+              onRate={updateRating}
             />
           )}
         </main>

@@ -6,13 +6,15 @@ interface Props {
   onAdd: (name: string) => void
   onDelete: (id: number) => void
   onRename: (id: number, name: string) => void
+  onRate: (id: number, rating: number) => void
 }
 
-export function PlayerManager({ records, onAdd, onDelete, onRename }: Props) {
+export function PlayerManager({ records, onAdd, onDelete, onRename, onRate }: Props) {
   const [name, setName] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
   const [editing, setEditing] = useState<number | null>(null)
   const [editName, setEditName] = useState('')
+  const [editingRating, setEditingRating] = useState<number | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -123,27 +125,49 @@ export function PlayerManager({ records, onAdd, onDelete, onRename }: Props) {
                       <>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-gray-900 truncate">{record.name}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-xs text-gray-400">
-                              {record.attended_recent + record.ill_recent}/{record.recent_event_count} last 6 wks
-                            </p>
-                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {record.attended_recent + record.ill_recent}/{record.recent_event_count} last 6 wks
+                          </p>
                         </div>
 
-                        {/* Attendance rate */}
-                        <span className={`text-xs font-bold shrink-0 px-2 py-0.5 rounded-full ${rate === null ? 'bg-gray-100 text-gray-400' : rate >= 75 ? 'bg-green-100 text-green-700' : rate >= 50 ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'}`}>
-                          Att: {rate !== null ? `${rate}%` : '—'}
-                        </span>
+                        {/* Stacked Att / Win pills */}
+                        <div className="flex flex-col gap-1 shrink-0 items-end">
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${rate === null ? 'bg-gray-100 text-gray-400' : rate >= 75 ? 'bg-green-100 text-green-700' : rate >= 50 ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'}`}>
+                            Att: {rate !== null ? `${rate}%` : '—'}
+                          </span>
+                          {(() => {
+                            if (record.games_with_result === 0) {
+                              return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">Win: —</span>
+                            }
+                            const pct = Math.round((record.win_rate ?? 0) * 100)
+                            const color = pct >= 60 ? 'bg-green-100 text-green-700' : pct >= 40 ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-600'
+                            return <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${color}`}>Win: {pct}%</span>
+                          })()}
+                        </div>
 
-                        {/* Win rate */}
-                        {(() => {
-                          if (record.games_with_result === 0) {
-                            return <span className="text-xs font-bold shrink-0 px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">Win: —</span>
-                          }
-                          const pct = Math.round((record.win_rate ?? 0) * 100)
-                          const color = pct >= 60 ? 'bg-green-100 text-green-700' : pct >= 40 ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-600'
-                          return <span className={`text-xs font-bold shrink-0 px-2 py-0.5 rounded-full ${color}`}>Win: {pct}%</span>
-                        })()}
+                        {/* Star rating */}
+                        {editingRating === record.id ? (
+                          <div className="flex gap-1 shrink-0">
+                            {[1,2,3,4,5].map((n) => (
+                              <button
+                                key={n}
+                                onClick={() => { onRate(record.id, n); setEditingRating(null) }}
+                                className={`w-7 h-7 rounded-lg text-xs font-bold transition-all active:scale-95 ${n === record.rating ? 'bg-amber-400 text-white' : 'bg-gray-100 text-gray-500 hover:bg-amber-100'}`}
+                              >
+                                {n}
+                              </button>
+                            ))}
+                            <button onClick={() => setEditingRating(null)} className="w-7 h-7 rounded-lg text-xs bg-gray-100 text-gray-400 hover:bg-gray-200">✕</button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => { setEditingRating(record.id); setConfirmDelete(null); setEditing(null) }}
+                            className="shrink-0 bg-amber-100 text-amber-700 font-bold text-xs px-2.5 py-1 rounded-full hover:bg-amber-200 active:scale-95 transition-all"
+                            title="Set star rating"
+                          >
+                            ⭐ {record.rating ?? 3}
+                          </button>
+                        )}
 
                         {/* Edit */}
                         <button
