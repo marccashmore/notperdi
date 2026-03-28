@@ -335,53 +335,51 @@ export function MatchView({ users, event, onRsvp, onSaveTeams, isAdmin, scores, 
           </>
         )}
 
-        {/* ── Playing pills (only when no teams assigned) ── */}
-        {!teamsAssigned && playingUsers.length > 0 && (
-          <div className="px-5 py-4 border-t border-green-200 bg-green-50">
-            <p className="text-xs font-bold uppercase tracking-wide mb-3 text-green-700">✓ Playing · {playingUsers.length}</p>
-            <div className="flex flex-wrap gap-2">
-              {playingUsers.map((u) => (
-                <span key={u.id} className="text-sm font-semibold px-3 py-1 rounded-full bg-green-100 text-green-800">{u.name}</span>
-              ))}
-            </div>
+        {/* ── RSVP subcards ── */}
+        {(!teamsAssigned && playingUsers.length > 0) || reserveUsers.length > 0 || outUsers.length > 0 || illUsers.length > 0 ? (
+          <div className="px-4 py-4 border-t border-gray-100 space-y-3">
+            {!teamsAssigned && playingUsers.length > 0 && (
+              <div className="rounded-xl bg-green-50 border border-green-200 px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-wide mb-2 text-green-700">✓ Playing · {playingUsers.length}</p>
+                <div className="flex flex-wrap gap-2">
+                  {playingUsers.map((u) => (
+                    <span key={u.id} className="text-sm font-semibold px-3 py-1 rounded-full bg-green-100 text-green-800">{u.name}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {reserveUsers.length > 0 && (
+              <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-wide mb-2 text-blue-700">Reserves · {reserveUsers.length}</p>
+                <div className="flex flex-wrap gap-2">
+                  {reserveUsers.map((u, i) => (
+                    <span key={u.id} className="text-sm font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-800">#{i + 1} {u.name}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {outUsers.length > 0 && (
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-wide mb-2 text-red-600">✕ Out · {outUsers.length}</p>
+                <div className="flex flex-wrap gap-2">
+                  {outUsers.map((u) => (
+                    <span key={u.id} className="text-sm font-semibold px-3 py-1 rounded-full bg-red-100 text-red-700">{u.name}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {illUsers.length > 0 && (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-wide mb-2 text-amber-700">🩹 Injured · {illUsers.length}</p>
+                <div className="flex flex-wrap gap-2">
+                  {illUsers.map((u) => (
+                    <span key={u.id} className="text-sm font-semibold px-3 py-1 rounded-full bg-amber-100 text-amber-700">{u.name}</span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
-
-        {/* ── Reserves ── */}
-        {reserveUsers.length > 0 && (
-          <div className="px-5 py-4 border-t border-blue-200 bg-blue-50">
-            <p className="text-xs font-bold uppercase tracking-wide mb-3 text-blue-700">Reserves · {reserveUsers.length}</p>
-            <div className="flex flex-wrap gap-2">
-              {reserveUsers.map((u, i) => (
-                <span key={u.id} className="text-sm font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-800">#{i + 1} {u.name}</span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Out ── */}
-        {outUsers.length > 0 && (
-          <div className="px-5 py-4 border-t border-red-200 bg-red-50">
-            <p className="text-xs font-bold uppercase tracking-wide mb-3 text-red-600">✕ Out · {outUsers.length}</p>
-            <div className="flex flex-wrap gap-2">
-              {outUsers.map((u) => (
-                <span key={u.id} className="text-sm font-semibold px-3 py-1 rounded-full bg-red-100 text-red-700">{u.name}</span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Injured ── */}
-        {illUsers.length > 0 && (
-          <div className="px-5 py-4 border-t border-amber-200 bg-amber-50">
-            <p className="text-xs font-bold uppercase tracking-wide mb-3 text-amber-700">🩹 Injured · {illUsers.length}</p>
-            <div className="flex flex-wrap gap-2">
-              {illUsers.map((u) => (
-                <span key={u.id} className="text-sm font-semibold px-3 py-1 rounded-full bg-amber-100 text-amber-700">{u.name}</span>
-              ))}
-            </div>
-          </div>
-        )}
+        ) : null}
 
         {/* ── Copy / Clear ── */}
         <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
@@ -389,7 +387,7 @@ export function MatchView({ users, event, onRsvp, onSaveTeams, isAdmin, scores, 
             onClick={copyTeams}
             className="flex-1 text-sm font-semibold py-2.5 rounded-xl transition-all active:scale-95 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200"
           >
-            {copied ? '✅ Copied!' : '📋 Copy'}
+            {copied ? '✅ Copied!' : teamsAssigned ? '📋 Copy Teams' : '📋 Copy Responses'}
           </button>
           {isAdmin && (
             <button
