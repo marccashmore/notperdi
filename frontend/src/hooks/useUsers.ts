@@ -49,10 +49,19 @@ export function useAttendance() {
 
   const refresh = useCallback(() => {
     setLoading(true)
-    fetch('/api/users/attendance')
-      .then((r) => r.json())
-      .then((data) => setRecords(data))
-      .finally(() => setLoading(false))
+    const attempt = (retriesLeft: number) => {
+      fetch('/api/users/attendance')
+        .then((r) => {
+          if (!r.ok && retriesLeft > 0) throw new Error('retry')
+          return r.json()
+        })
+        .then((data) => { setRecords(data); setLoading(false) })
+        .catch(() => {
+          if (retriesLeft > 0) setTimeout(() => attempt(retriesLeft - 1), 2000)
+          else setLoading(false)
+        })
+    }
+    attempt(3)
   }, [])
 
   useEffect(() => { refresh() }, [refresh])

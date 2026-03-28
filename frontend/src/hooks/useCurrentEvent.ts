@@ -23,14 +23,23 @@ export function useCurrentEvent(targetDate: string) {
 
   const refresh = useCallback(() => {
     setLoading(true)
-    fetch(`/api/events/current?date=${targetDate}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setEvent(data)
-        setError(null)
-      })
-      .catch(() => setError('Failed to load event'))
-      .finally(() => setLoading(false))
+    const attempt = (retriesLeft: number) => {
+      fetch(`/api/events/current?date=${targetDate}`)
+        .then((r) => {
+          if (!r.ok && retriesLeft > 0) throw new Error('retry')
+          return r.json()
+        })
+        .then((data) => { setEvent(data); setError(null); setLoading(false) })
+        .catch((e) => {
+          if (retriesLeft > 0) {
+            setTimeout(() => attempt(retriesLeft - 1), 2000)
+          } else {
+            setError(e.message === 'retry' ? 'Server is starting up, please refresh' : 'Failed to load event')
+            setLoading(false)
+          }
+        })
+    }
+    attempt(3)
   }, [targetDate])
 
   useEffect(() => { refresh() }, [refresh])

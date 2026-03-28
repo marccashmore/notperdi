@@ -14,10 +14,12 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 _engine: sa.Engine | None = None
 
 def get_engine() -> sa.Engine:
-    """Return a module-level SQLAlchemy engine (connection pool reused across warm invocations)."""
+    """Return a cached SQLAlchemy engine, created on first invocation once env vars are available."""
     global _engine
     if _engine is None:
-        conn_str = os.environ["SQL_CONNECTION_STRING"]
+        conn_str = os.environ.get("SQL_CONNECTION_STRING")
+        if not conn_str:
+            raise RuntimeError("SQL_CONNECTION_STRING is not set")
         _engine = sa.create_engine(f"mssql+pyodbc:///?odbc_connect={conn_str}", pool_pre_ping=True)
     return _engine
 
@@ -36,7 +38,12 @@ def next_wednesday(from_date: date | None = None) -> date:
 
 @app.route(route="health", methods=["GET"])
 def health(req: func.HttpRequest) -> func.HttpResponse:
-    return _json({"status": "ok"})
+    try:
+        with get_engine().connect() as conn:
+            conn.execute(sa.text("SELECT 1"))
+        return _json({"status": "ok"})
+    except Exception:
+        return _json({"status": "db unavailable"}, status=503)
 
 
 # ---------------------------------------------------------------------------
